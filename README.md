@@ -14,10 +14,10 @@ User → Illustra UI (Express + Tailwind)
 
 ## Packages
 
-| Package | Description | Port |
-|---------|-------------|------|
+| Package                      | Description                                                                  | Port |
+| ---------------------------- | ---------------------------------------------------------------------------- | ---- |
 | [`@illustra/agent`](./agent) | LangChain + Gemini agent with Stability AI image generation via A2A protocol | 8080 |
-| [`@illustra/ui`](./ui) | Express + Tailwind web interface that proxies requests to the agent | 3000 |
+| [`@illustra/ui`](./ui)       | Express + Tailwind web interface that proxies requests to the agent          | 8080 |
 
 ## Prerequisites
 
@@ -29,6 +29,7 @@ User → Illustra UI (Express + Tailwind)
 ## Quick Start
 
 1. **Install dependencies**:
+
    ```bash
    bun install
    ```
@@ -36,6 +37,7 @@ User → Illustra UI (Express + Tailwind)
 2. **Set up environment variables**:
 
    Agent (`agent/.env`):
+
    ```env
    GOOGLE_API_KEY=your_gemini_api_key
    STABILITY_KEY=your_stability_api_key
@@ -44,20 +46,23 @@ User → Illustra UI (Express + Tailwind)
    ```
 
    UI (`ui/.env`):
+
    ```env
    PORT=3000
    AGENT_URL=http://localhost:8080
    ```
 
 3. **Run both services**:
+
    ```bash
    bun dev
    ```
 
    Or run individually:
+
    ```bash
    bun dev:agent   # starts agent on :8080
-   bun dev:ui      # starts ui on :3000
+   make run-ui     # starts UI on :3000 (local dev override)
    ```
 
 ## Development
@@ -96,22 +101,25 @@ curl -X POST http://localhost:8080/a2a/invoke \
 ```
 
 Response (A2UI format):
+
 ```json
 {
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
     "role": "assistant",
-    "parts": [{
-      "kind": "data",
-      "data": {
-        "type": "Image",
-        "props": {
-          "url": "https://storage.googleapis.com/illustra/images/1234567890.png",
-          "alt": "A cute cat"
+    "parts": [
+      {
+        "kind": "data",
+        "data": {
+          "type": "Image",
+          "props": {
+            "url": "https://storage.googleapis.com/illustra/images/1234567890.png",
+            "alt": "A cute cat"
+          }
         }
       }
-    }],
+    ],
     "messageId": "uuid"
   }
 }
@@ -121,46 +129,79 @@ Response (A2UI format):
 
 ### Agent (`@illustra/agent`)
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GOOGLE_API_KEY` | Yes | Google Gemini API key |
-| `STABILITY_KEY` | Yes | Stability AI API key |
-| `GCS_BUCKET_NAME` | Yes | GCS bucket for image storage |
-| `PORT` | No | Server port (default: 8080) |
+| Variable          | Required | Description                  |
+| ----------------- | -------- | ---------------------------- |
+| `GOOGLE_API_KEY`  | Yes      | Google Gemini API key        |
+| `STABILITY_KEY`   | Yes      | Stability AI API key         |
+| `GCS_BUCKET_NAME` | Yes      | GCS bucket for image storage |
+| `PORT`            | No       | Server port (default: 8080)  |
 
 ### UI (`@illustra/ui`)
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `PORT` | No | Server port (default: 3000) |
-| `AGENT_URL` | No | Agent endpoint (default: http://localhost:8080) |
+| Variable    | Required         | Description                                     |
+| ----------- | ---------------- | ----------------------------------------------- |
+| `PORT`      | No               | Server port (default: 8080)                     |
+| `AGENT_URL` | Yes (deployment) | Agent endpoint (default: http://localhost:8080) |
 
 ## Deployment
 
+Each service uses its own `env.yaml` file for Cloud Run environment variables. Edit these files before deploying with your actual values.
+
 ### Agent
 
+Edit `agent/env.yaml` with your API keys:
+
+```yaml
+GOOGLE_API_KEY: your_gemini_api_key
+STABILITY_KEY: your_stability_api_key
+GCS_BUCKET_NAME: illustra
+```
+
+Then deploy:
+
 ```bash
-cd agent
-gcloud run deploy illustra-agent \
+make deploy
+```
+
+Or manually:
+
+```bash
+cd agent && gcloud run deploy illustra-agent \
   --source . \
   --region asia-south1 \
   --port 8080 \
-  --timeout=300 \
-  --allow-unauthenticated \
-  --set-env-vars="GCS_BUCKET_NAME=illustra" \
-  --set-secrets="GOOGLE_API_KEY=gemini-api-key:latest,STABILITY_KEY=stability-api-key:latest"
+  --env-vars-file env.yaml \
+  --allow-unauthenticated
 ```
 
 ### UI
 
+Edit `ui/env.yaml` with your agent's Cloud Run URL:
+
+```yaml
+AGENT_URL: https://illustra-agent-xxxxx.a.run.app
+```
+
+Find your agent URL via:
+
 ```bash
-cd ui
-gcloud run deploy illustra-ui \
+gcloud run services describe illustra-agent --region asia-south1 --format="value(status.url)"
+```
+
+Then deploy:
+
+```bash
+make deploy-ui
+```
+
+Or manually:
+
+```bash
+cd ui && gcloud run deploy illustra-ui \
   --source . \
   --region asia-south1 \
-  --port 3000 \
-  --allow-unauthenticated \
-  --set-env-vars="AGENT_URL=https://illustra-agent-xxxxx.a.run.app"
+  --env-vars-file env.yaml \
+  --allow-unauthenticated
 ```
 
 ## Project Structure
@@ -181,6 +222,7 @@ illustra/
 │   │   └── utils/
 │   │       ├── a2ui.ts                # A2UI helpers
 │   │       └── storage.ts             # GCS upload utility
+│   ├── env.yaml                       # Cloud Run env vars (gitignored)
 │   ├── package.json
 │   ├── tsconfig.json
 │   ├── Dockerfile
@@ -195,6 +237,7 @@ illustra/
 │   ├── package.json
 │   ├── tsconfig.json
 │   ├── Dockerfile
+│   ├── env.yaml                       # Cloud Run env vars (gitignored)
 │   └── .env.example
 ├── scripts/
 │   ├── test.sh                        # Health check + agent card test
@@ -209,3 +252,7 @@ illustra/
 ## License
 
 MIT
+
+## Author
+
+Mayank (@mnkrana) — [github.com/mnkrana](https://github.com/mnkrana)
