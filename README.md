@@ -12,6 +12,10 @@ User → Illustra UI (Express + Tailwind)
        GCS Bucket → Public URL
 ```
 
+## Screenshot
+
+![Illustra UI](docs/demo.png)
+
 ## Packages
 
 | Package                      | Description                                                                  | Port |
