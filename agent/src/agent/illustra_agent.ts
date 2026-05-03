@@ -40,14 +40,19 @@ export async function createIllustraAgent() {
 
 				console.error("Agent: Using prompt:", enhancedPrompt);
 
-				// Step 2: Generate image using the tool (pass as object with prompt key)
+				// Step 2: Generate image using the tool
 				const imageResult = await generateImage.func({
 					prompt: enhancedPrompt,
 				});
 				console.error("Agent: Image result:", imageResult);
 
-				// Parse the result
-				const result = JSON.parse(imageResult as string);
+				// Parse the result with fallback
+				let result: { status?: string; error?: string; image_url?: string };
+				try {
+					result = JSON.parse(imageResult as string);
+				} catch {
+					return `Error: Image generation failed - unexpected response from image service`;
+				}
 
 				if (result.status === "success" && result.image_url) {
 					// Return A2UI object (server will format it)
