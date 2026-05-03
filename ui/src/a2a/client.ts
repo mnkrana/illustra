@@ -30,6 +30,18 @@ export function addA2ARoutes(app: Express) {
 				}),
 			});
 
+			const contentType = response.headers.get("content-type") || "";
+			if (!contentType.includes("application/json")) {
+				const rawText = await response.text();
+				console.error(
+					`UI: Non-JSON response from agent (status ${response.status}, type: ${contentType}):`,
+					rawText.substring(0, 500),
+				);
+				return res.status(response.status || 502).json({
+					error: `Agent returned non-JSON response (HTTP ${response.status})`,
+				});
+			}
+
 			const data = await response.json();
 			console.log("UI: Agent response:", JSON.stringify(data, null, 2));
 
