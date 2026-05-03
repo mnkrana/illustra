@@ -1,0 +1,32 @@
+{
+	"name": "illustra",
+	"private": true,
+	"packageManager": "bun@1.3.11",
+	"workspaces": [
+		"agent",
+		"ui"
+	],
+	"scripts": {
+		"dev:agent": "bun run --cwd agent start",
+		"dev:ui": "bun run --cwd ui start",
+		"dev": "concurrently -n agent,ui -c blue,pink \"bun run dev:agent\" \"bun run dev:ui\"",
+		"check:agent": "bun run --cwd agent check",
+		"check:ui": "bun run --cwd ui check",
+		"check": "bun run check:agent && bun run check:ui",
+		"prepare": "husky"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.13",
+		"@commitlint/cli": "^20.5.3",
+		"@commitlint/config-conventional": "^20.5.3",
+		"concurrently": "^9.2.1",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.4.0",
+		"typescript": "^5.7.0"
+	},
+	"lint-staged": {
+		"*.{ts,tsx,js,jsx,json,md}": [
+			"biome check --write"
+		]
+	}
+}

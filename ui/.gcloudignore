@@ -1,0 +1,10 @@
+node_modules
+*.md
+.git/
+.env*
+!.env.example
+.DS_Store
+*.log
+.husky/
+env.yaml
+bun.lock

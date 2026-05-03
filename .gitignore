@@ -1,0 +1,16 @@
+node_modules/
+*.tsbuildinfo
+dist/
+build/
+.env
+.env.*
+!.env.example
+coverage/
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+env.yaml
+*.lockb
