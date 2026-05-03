@@ -4,7 +4,7 @@ run:
 	cd agent && bun src/main.ts
 
 run-ui:
-	cd ui && bun src/index.ts
+	cd ui && PORT=3000 bun src/index.ts
 
 test:
 	bash scripts/test.sh
@@ -17,13 +17,14 @@ deploy:
 		--source . \
 		--region asia-south1 \
 		--port 8080 \
+		--env-vars-file env.yaml \
 		--allow-unauthenticated
 
 deploy-ui:
 	cd ui && gcloud run deploy illustra-ui \
 		--source . \
 		--region asia-south1 \
-		--port 3000 \
+		--env-vars-file env.yaml \
 		--allow-unauthenticated
 
 clean:
