@@ -27,7 +27,8 @@ type AgentExecutor = {
 
 const agentCard: AgentCard = {
 	name: "@illustra/agent",
-	description: "Generates images using Stability AI from a detailed prompt.",
+	description:
+		"Generates images from text prompts using Stability AI (default) or OpenAI GPT Image 2.0. Prefix [openai] to use OpenAI, [stability] for Stability AI. Add [low], [medium], [high], or [auto] to set OpenAI quality.",
 	url: `http://localhost:${PORT}`,
 	protocolVersion: "0.3.0",
 	version: "0.1.0",
@@ -35,8 +36,9 @@ const agentCard: AgentCard = {
 		{
 			id: "image_generation",
 			name: "Image Generation",
-			description: "Generate images from text prompts using Stability AI",
-			tags: ["image", "generation", "stability-ai"],
+			description:
+				"Generate images from text prompts. Supports Stability AI (default) and OpenAI GPT Image 2.0. Use [openai] prefix to switch providers. Use [low], [medium], [high], or [auto] for OpenAI quality control.",
+			tags: ["image", "generation", "stability-ai", "openai"],
 		},
 	],
 	capabilities: {

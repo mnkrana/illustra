@@ -1,5 +1,32 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { generateImageOpenAI } from "./tools/openai_image_tool";
 import { generateImage } from "./tools/stability_tool";
+
+function parseInput(input: string): {
+	prompt: string;
+	tool: "stability" | "openai";
+	quality: string;
+} {
+	let prompt = input;
+	let tool: "stability" | "openai" = "stability"; // default
+	let quality = "low"; // default for OpenAI
+
+	// Extract tool prefix [openai] or [stability]
+	const toolMatch = prompt.match(/\[(openai|stability)\]/i);
+	if (toolMatch) {
+		tool = toolMatch[1].toLowerCase() as "stability" | "openai";
+		prompt = prompt.replace(/\[(openai|stability)\]/i, "").trim();
+	}
+
+	// Extract quality prefix [low], [medium], [high], [auto] — OpenAI only
+	const qualityMatch = prompt.match(/\[(low|medium|high|auto)\]/i);
+	if (qualityMatch) {
+		quality = qualityMatch[1].toLowerCase();
+		prompt = prompt.replace(/\[(low|medium|high|auto)\]/i, "").trim();
+	}
+
+	return { prompt, tool, quality };
+}
 
 const SYSTEM_PROMPT = `You are an image generation agent. When given a user request, respond with ONLY a JSON object containing the enhanced prompt.
 Output format: {"enhanced_prompt": "detailed prompt here"}
@@ -15,17 +42,21 @@ export async function createIllustraAgent() {
 	return {
 		invoke: async ({ input }: { input: string }) => {
 			try {
+				// Step 0: Parse input for tool and quality prefixes
+				const { prompt: parsedPrompt, tool, quality } = parseInput(input);
+				console.error("Agent: Parsed input:", { parsedPrompt, tool, quality });
+
 				// Step 1: Use Gemini to enhance the prompt
-				console.error("Agent: Enhancing prompt for:", input);
+				console.error("Agent: Enhancing prompt for:", parsedPrompt);
 				const enhancementResult = await model.invoke(
-					`${SYSTEM_PROMPT}\n\nUser request: ${input}`,
+					`${SYSTEM_PROMPT}\n\nUser request: ${parsedPrompt}`,
 				);
 
 				const responseText = enhancementResult.content as string;
 				console.error("Agent: Gemini response:", responseText);
 
 				// Extract JSON from response
-				let enhancedPrompt = input; // fallback to original
+				let enhancedPrompt = parsedPrompt; // fallback to original
 				try {
 					const jsonMatch = responseText.match(/\{[^}]+\}/);
 					if (jsonMatch) {
@@ -40,10 +71,20 @@ export async function createIllustraAgent() {
 
 				console.error("Agent: Using prompt:", enhancedPrompt);
 
-				// Step 2: Generate image using the tool
-				const imageResult = await generateImage.func({
-					prompt: enhancedPrompt,
-				});
+				// Step 2: Generate image using the selected tool
+				let imageResult: string;
+				if (tool === "openai") {
+					console.error("Agent: Using OpenAI GPT Image 2.0, quality:", quality);
+					imageResult = (await generateImageOpenAI.func({
+						prompt: enhancedPrompt,
+						quality: quality as "low" | "medium" | "high" | "auto",
+					})) as unknown as string;
+				} else {
+					console.error("Agent: Using Stability AI (default)");
+					imageResult = (await generateImage.func({
+						prompt: enhancedPrompt,
+					})) as unknown as string;
+				}
 				console.error("Agent: Image result:", imageResult);
 
 				// Parse the result with fallback
@@ -62,7 +103,7 @@ export async function createIllustraAgent() {
 							type: "Image",
 							props: {
 								url: result.image_url,
-								alt: input,
+								alt: parsedPrompt,
 							},
 						},
 					};
