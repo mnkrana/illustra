@@ -6,8 +6,8 @@ AI image generation monorepo with an A2A-compatible agent and a web UI.
 User → Illustra UI (Express + Tailwind)
          ↓ /api/generate
        Illustra Agent (LangChain + Gemini)
-         ↓ tool call
-       Stability AI (image generation)
+         ↓ tool call (prefix routing)
+       Stability AI (default) or OpenAI GPT Image 2.0
          ↓ upload
        GCS Bucket → Public URL
 ```
@@ -86,7 +86,30 @@ bun check:ui         # lint + typecheck UI
 - `GET /.well-known/agent-card.json` - A2A Agent Card discovery
 - `POST /a2a/invoke` - A2A JSON-RPC endpoint
 
-### Example: Generate Image
+### Provider Prefix Syntax
+
+The agent supports two image generation providers. Use message prefixes to switch between them:
+
+| Prefix | Provider | Default Quality | Example |
+|--------|----------|----------------|---------|
+| (none) | Stability AI (default) | - | `A cute cat` |
+| `[openai]` | OpenAI GPT Image 2.0 | `low` | `[openai] A cute cat` |
+| `[stability]` | Stability AI | - | `[stability] A cute cat` |
+
+### Quality Prefix (OpenAI only)
+
+Add a quality prefix to control OpenAI image quality:
+
+| Prefix | Quality | Example |
+|--------|---------|---------|
+| `[low]` | Low ($0.006 / 1024×1024) | `[openai][low] A cute cat` |
+| `[medium]` | Medium ($0.053 / 1024×1024) | `[openai][medium] A cute cat` |
+| `[high]` | High ($0.211 / 1024×1024) | `[openai][high] A cute cat` |
+| `[auto]` | Auto (model decides) | `[openai][auto] A cute cat` |
+
+Prefix order doesn't matter: `[high][openai]` works the same as `[openai][high]`.
+
+### Example: Generate Image (Stability AI - Default)
 
 ```bash
 curl -X POST http://localhost:8080/a2a/invoke \
@@ -99,6 +122,24 @@ curl -X POST http://localhost:8080/a2a/invoke \
       "message": {
         "role": "user",
         "parts": [{"type": "text", "text": "A cute cat"}]
+      }
+    }
+  }'
+```
+
+### Example: Generate Image (OpenAI, High Quality)
+
+```bash
+curl -X POST http://localhost:8080/a2a/invoke \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "message/send",
+    "params": {
+      "message": {
+        "role": "user",
+        "parts": [{"type": "text", "text": "[openai][high] A cute cat"}]
       }
     }
   }'
@@ -137,6 +178,7 @@ Response (A2UI format):
 | ----------------- | -------- | ---------------------------- |
 | `GOOGLE_API_KEY`  | Yes      | Google Gemini API key        |
 | `STABILITY_KEY`   | Yes      | Stability AI API key         |
+| `OPENAI_API_KEY`   | No       | OpenAI API key (for GPT Image 2.0) |
 | `GCS_BUCKET_NAME` | Yes      | GCS bucket for image storage |
 | `PORT`            | No       | Server port (default: 8080)  |
 
