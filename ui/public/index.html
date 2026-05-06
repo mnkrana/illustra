@@ -63,13 +63,13 @@
           Describe your image
         </label>
         <div class="flex gap-3">
-          <input 
-            id="prompt-input"
-            type="text" 
-            placeholder="A serene mountain landscape with a lake at sunset..." 
-            class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-200 outline-none transition text-gray-800 placeholder-gray-400"
-            onkeydown="if(event.key==='Enter') generateImage()"
-          />
+         <input 
+             id="prompt-input"
+             type="text" 
+             placeholder="A serene mountain landscape... (use [openai] for OpenAI, [high] for quality)" 
+             class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-200 outline-none transition text-gray-800 placeholder-gray-400"
+             onkeydown="if(event.key==='Enter') generateImage()"
+           />
           <button 
             id="generate-btn"
             onclick="generateImage()"
@@ -140,8 +140,9 @@
   <footer class="bg-white border-t border-gray-200 mt-12">
     <div class="container mx-auto px-4 py-6 text-center text-sm text-gray-500">
       Powered by <span class="font-semibold text-purple-600">Stability AI</span> • 
-      <span class="font-semibold text-blue-600">Gemini</span> • 
-      Built with <span class="font-semibold text-gray-800">A2A Protocol</span>
+       <span class="font-semibold text-green-600">OpenAI GPT Image 2.0</span> • 
+       <span class="font-semibold text-blue-600">Gemini</span> • 
+       Built with <span class="font-semibold text-gray-800">A2A Protocol</span>
     </div>
   </footer>
 
